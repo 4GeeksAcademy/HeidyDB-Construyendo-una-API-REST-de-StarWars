@@ -36,7 +36,6 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
- 
 
 #obtener todos los usuarios 
 @app.route('/users', methods=['GET'])
@@ -118,10 +117,10 @@ def get_character_by_id(id):
     print (personaje_id)
     if personaje_id is None:
         return({'msg': 'el id no corresponde a ningun personaje'}), 400
-    return ({'msg': 'ok', 'el personaje es': personaje_id.serialize()})
+    return ({'msg': 'ok', 'el personaje es': personaje_id.serialize()}), 200
     
   
-#post de personajes 
+#POST de personajes 
 @app.route('/characters', methods= ['POST'])
 def post_personaje():
     body= request.get_json(silent=True)
@@ -161,7 +160,7 @@ def add_favorite_personaje_a_usuario(ch_id, u_id):
     db.session.commit()
     return jsonify({'msg':'ok', 'results': nuevo_favorito.serialize()}), 200
 
-#DELETE /favorite/characters/<int:character_id> Elimina un personaje favorito con el id = character_id
+#DELETE /favorite/characters/<int:character_id> Elimina un personaje FAVORITO con el id = character_id
 @app.route('/favorite/characters/<int:character_id>', methods = ['DELETE'])
 def borrar_personaje_favorito(character_id):
     personaje_f = FavoriteCharacteres.query.get(character_id)
@@ -171,6 +170,41 @@ def borrar_personaje_favorito(character_id):
     db.session.delete(personaje_f)
     db.session.commit()
     return jsonify({'msg': f'el personaje favorito con ID {character_id} ha sido borrado de la lista de favoritos'}), 200
+
+#DELETE de un personaje en la tabla Characters
+@app.route('/characters/<int:character_id>', methods= ['DELETE'])
+def borrar_personaje(personaje_id):
+    pers= Characters.query.get(personaje_id)
+    if pers is None:
+        return jsonify({'msg': f'el planeta con id {personaje_id} no existe '}), 400
+    db.session.delete(personaje_id)
+    db.session.commit()
+    return ({'msg': f'el personaje con id {personaje_id} ha sido borrado de la tabla personajes'}), 200
+
+
+#PUT DE UN personaje. actualiza sus campos
+@app.route('/characters-put/<int:character_id>', methods= ['PUT'])
+def actualizar_personaje(character_id):
+    personaje=Characters.query.get(character_id)
+    body= request.get_json(silent=True)
+    if personaje is None:
+        return jsonify({'msg': 'no existe ningun personaje con ese ID '}), 400
+    if body is None :
+        return jsonify({'msg': 'debe introducir los campos a modificar'}), 400
+    if 'name' not in body:
+        return ({'msg': 'debe introducir un nombre de un personaje en la variable name'}), 400
+    if 'heigth' not in body :
+        return ({'msg': 'debe introducir la altura del personaje en la variable heigth'}), 400
+    if 'weigth' not in body:
+        return ({'msg': 'debe introducir el peso del personaje en la variable weigth'}), 400
+       
+    #cada campo de la instancia Personajes con el id requerido se actualiza con lo que pasamor en el body
+   
+    personaje.name=body['name']
+    personaje.heigth=body['heigth']
+    personaje.weigth=body['weigth']
+    db.session.commit() #no hago .add porque est actualizando , no agregando , ya existe esa instancia de planeta
+    return jsonify({'msg':f'se ha actualizado el id {character_id} en la tabla planetas', 'results': personaje.serialize() }), 200
 
 
 #---------------------------------------PLANETAS-----------------------------------------------------
@@ -214,7 +248,7 @@ def post_planeta():
     db.session.commit()
     return ({'msg': 'ok', 'result': nuevo_planeta.serialize()})
 
-#POST de un planeta favorito a un usuario segun planet_id /favorite/planet/<int:planet_id>
+#POST de un planeta FAVORITO a un usuario segun planet_id /favorite/planet/<int:planet_id>
 @app.route('/favorite/<int:user_id>/planet/<int:planet_id>', methods = ['POST'])
 def add_favorite_planet_a_usuario(planet_id, user_id):
     usuario= User.query.get(user_id)
@@ -235,7 +269,7 @@ def add_favorite_planet_a_usuario(planet_id, user_id):
     db.session.commit()
     return jsonify({'msg':'ok', 'results': nuevo_favorito.serialize()}), 200
 
-#DELETE  Elimina un planet favorito con el id = planet_id. /favorite/planet/<int:planet_id>
+#DELETE  Elimina un planet FAVORITO con el id = planet_id. /favorite/planet/<int:planet_id>
 @app.route('/favorite/planet/<int:planet_id>', methods = ['DELETE'])
 def eliminar_planeta_por_id(planet_id):
     planeta= FavoritePlanets.query.get(planet_id)
@@ -244,8 +278,35 @@ def eliminar_planeta_por_id(planet_id):
     db.session.delete(planeta)
     db.session.commit()
     return jsonify({'msg':'ok', 'results': f'el planeta con id {planet_id} ha sido borrado dela lista de favoritos'}), 200
-    
 
+
+#DELETE de un planeta
+@app.route('/planets/<int:planet_id>', methods= ['DELETE'])
+def eliminar_personaje_por_id(planet_id):
+    planeta= Planets.query.get(planet_id)
+    if planeta is None:
+        return jsonify({'msg': f'el planeta con id {planet_id} no existe '}), 400
+    db.session.delete(planeta)
+    db.session.commit()
+    return ({'msg': f'el planeta con id {planet_id} ha sido borrado de la tabla Planetas'}), 200
+
+#PUT DE UN PLANETA
+@app.route('/planets-put/<int:planet_id>', methods= ['PUT'])
+def actualizar_planeta(planet_id):
+    planeta=Planets.query.get(planet_id)
+    body= request.get_json(silent=True)
+    if planeta is None:
+        return jsonify({'msg': 'no existe ningun planeta con ese ID '}), 400
+    if body is None :
+        return jsonify({'msg': 'debe introducir los campos a modificar'}), 400
+ 
+    #cada campo de la instancia Planetas con el id requerido se actualiza con lo que pasamor en el body
+    
+    planeta.name=body['name']
+    planeta.population=body['population']
+    planeta.diameter=body['diameter']
+    db.session.commit() #no hago .add porque est actualizando , no agregando , ya existe esa instancia de planeta
+    return jsonify({'msg':f'se ha actualizado el id {planet_id} en la tabla planetas', 'results': planeta.serialize() }), 200
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':

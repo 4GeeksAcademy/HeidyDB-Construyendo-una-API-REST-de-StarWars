@@ -43,6 +43,8 @@ class Characters(db.Model):
         return {
             "id": self.id,
             "name": self.name,
+            "heigth": self.heigth,
+            "weigth": self.weigth
             }
 
 
